@@ -2,15 +2,6 @@
 
 A new Flutter project.
 
-## Getting Started
+Link web present lab 6: [Cơ Chế Layout Trong Flutter: Constraints & Positioning](https://datvt04.github.io/PRM393_Lab/slide_lab6.html)
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Link canva lab 6: [Lab6_Flutter&#39;s model](https://www.canva.com/design/DAG_ZY5UaTs/EcMBblW7l9xvcElTQzRzeg/edit?utm_content=DAG_ZY5UaTs&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
