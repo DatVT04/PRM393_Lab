@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cơ Chế Layout Trong Flutter: Constraints & Positioning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Warm Neutrals & Flutter Blue -->
+    <!-- Background: #FAFAFA (Warm White) -->
+    <!-- Text: #333333 (Dark Gray) -->
+    <!-- Primary: #02569B (Flutter Blue) -->
+    <!-- Secondary: #0175C2 (Lighter Blue) -->
+    <!-- Accent: #FFC107 (Amber for highlights) -->
+
+    <!-- Application Structure Plan: 
+         1. Header: Title and the "Core Mantra" intro.
+         2. Concept Flow (Section 1): Interactive breakdown of the 3-step layout process (Constraints -> Sizes -> Position).
+         3. The Laboratory (Section 2): An interactive Constraint Simulator. Users adjust Min/Max sliders. 
+            - Chart.js visualizes the numeric constraint profile (Tight vs Loose).
+            - A visual DOM element simulates the actual rendering result.
+         4. Widget Case Studies (Section 3): Interactive tabs exploring common scenarios (Center, Row, Expanded) showing how constraints change.
+         5. Summary: Key takeaways.
+         Why: This structure moves from abstract theory (Mantra) to concrete experimentation (Lab), and finally to practical application (Case Studies), mirroring the learning curve.
+    -->
+
+    <!-- Visualization & Content Choices:
+         1. Concept Flow: HTML/CSS Flexbox blocks with JS-triggered distinct states to visualize the "Conversation" between Parent and Child.
+         2. Constraint Lab: 
+            - Chart.js Bar Chart: To clearly compare Min vs Max values visually, highlighting the difference between "Tight" and "Loose" constraints numerically.
+            - Live Preview Box: To show the actual spatial result of those numbers.
+         3. Case Studies: Tabbed interface updating text and simple CSS diagrams to explain complex behaviors like "Unbounded" constraints in Rows.
+         - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+
+    <style>
+        body { font-family: 'Roboto', sans-serif; background-color: #FAFAFA; color: #333333; }
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 300px; 
+            max-height: 400px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        
+        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+        .btn-interactive { transition: all 0.3s ease; }
+        .btn-interactive:active { transform: scale(0.95); }
+        
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #02569B; cursor: pointer; margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer; background: #E5E7EB; border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 pb-20">
+
+    <!-- Header Section -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-blue-800">Flutter Layout Explorer</h1>
+            <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-600">
+                <a href="#mantra" class="hover:text-blue-600 transition">Thần Chú</a>
+                <a href="#simulator" class="hover:text-blue-600 transition">Phòng Thí Nghiệm</a>
+                <a href="#scenarios" class="hover:text-blue-600 transition">Tình Huống</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Intro / Mantra Section -->
+    <section id="mantra" class="max-w-4xl mx-auto mt-10 px-4">
+        <div class="text-center mb-10">
+            <h2 class="text-4xl font-extrabold text-gray-900 mb-4">"Constraints go down. Sizes go up."</h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Chào mừng bạn đến với hướng dẫn tương tác về cơ chế Layout của Flutter. 
+                Nếu bạn chỉ cần nhớ một điều, hãy nhớ câu thần chú cốt lõi này. 
+                Hãy khám phá quy trình 3 bước bên dưới để hiểu rõ cách Widget cha và con "giao tiếp" với nhau.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Step 1 -->
+            <div class="card p-6 border-l-4 border-blue-500 cursor-pointer" onclick="highlightStep(1)" id="step-card-1">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-3xl font-bold text-blue-200">01</span>
+                    <div class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">Constraints</div>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Ràng Buộc Đi Xuống</h3>
+                <p class="text-gray-500 text-sm">Widget Cha đưa ra các giới hạn (Min/Max Width, Min/Max Height) cho Widget Con.</p>
+                <div class="mt-4 text-center text-blue-600 text-sm font-bold">"Con chỉ được rộng từ 0-100px nhé!"</div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="card p-6 border-l-4 border-amber-500 cursor-pointer opacity-70" onclick="highlightStep(2)" id="step-card-2">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-3xl font-bold text-amber-200">02</span>
+                    <div class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded">Sizes</div>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Kích Thước Đi Lên</h3>
+                <p class="text-gray-500 text-sm">Widget Con tự quyết định kích thước của mình dựa trên giới hạn đó và báo lại.</p>
+                <div class="mt-4 text-center text-amber-600 text-sm font-bold">"Con chọn rộng đúng 50px ạ."</div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="card p-6 border-l-4 border-green-500 cursor-pointer opacity-70" onclick="highlightStep(3)" id="step-card-3">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-3xl font-bold text-green-200">03</span>
+                    <div class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded">Position</div>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Cha Đặt Vị Trí</h3>
+                <p class="text-gray-500 text-sm">Widget Cha nhận kích thước và đặt Con vào tọa độ cụ thể (x, y).</p>
+                <div class="mt-4 text-center text-green-600 text-sm font-bold">"Được, ta sẽ đặt con ở giữa."</div>
+            </div>
+        </div>
+        
+        <div id="step-detail" class="mt-6 bg-blue-50 p-4 rounded-lg text-center text-blue-800 italic transition-all duration-300">
+            Click vào các thẻ trên để xem chi tiết luồng dữ liệu.
+        </div>
+    </section>
+
+    <!-- The Laboratory: Constraints Simulator -->
+    <section id="simulator" class="max-w-5xl mx-auto mt-16 px-4">
+        <div class="flex flex-col md:flex-row items-end justify-between mb-6 border-b pb-4">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">Phòng Thí Nghiệm Constraints</h2>
+                <p class="text-gray-600 mt-2 max-w-2xl">
+                    Tại đây, bạn đóng vai trò là Widget Cha. Hãy điều chỉnh 4 thanh trượt bên dưới để thay đổi "luật chơi" (Constraints).
+                    Quan sát biểu đồ để xem Widget Con có bị "ép" (Tight) hay được "tự do" (Loose), và xem kết quả hiển thị thực tế bên phải.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Controls -->
+            <div class="lg:col-span-4 space-y-6 bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="font-bold text-gray-700 border-b pb-2">Điều Chỉnh Ràng Buộc (Parent)</h3>
+                
+                <!-- Width Controls -->
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <label class="font-medium text-gray-600">Min Width</label>
+                            <span id="val-min-w" class="text-blue-600 font-bold">50</span>
+                        </div>
+                        <input type="range" id="min-w" min="0" max="300" value="50" oninput="updateLab()">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <label class="font-medium text-gray-600">Max Width</label>
+                            <span id="val-max-w" class="text-blue-600 font-bold">250</span>
+                        </div>
+                        <input type="range" id="max-w" min="0" max="300" value="250" oninput="updateLab()">
+                    </div>
+                </div>
+
+                <!-- Height Controls -->
+                <div class="space-y-4 pt-4 border-t">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <label class="font-medium text-gray-600">Min Height</label>
+                            <span id="val-min-h" class="text-amber-600 font-bold">50</span>
+                        </div>
+                        <input type="range" id="min-h" min="0" max="300" value="50" oninput="updateLab()">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <label class="font-medium text-gray-600">Max Height</label>
+                            <span id="val-max-h" class="text-amber-600 font-bold">250</span>
+                        </div>
+                        <input type="range" id="max-h" min="0" max="300" value="250" oninput="updateLab()">
+                    </div>
+                </div>
+
+                <!-- Status Indicator -->
+                <div class="mt-4 p-3 bg-gray-100 rounded text-sm">
+                    <p class="font-bold text-gray-700">Trạng Thái Ràng Buộc:</p>
+                    <p id="constraint-status" class="text-gray-600 mt-1">Đang tính toán...</p>
+                </div>
+            </div>
+
+            <!-- Visualization Column -->
+            <div class="lg:col-span-8 flex flex-col gap-6">
+                <!-- Chart Container -->
+                <div class="bg-white p-4 rounded-xl shadow-sm">
+                    <h4 class="text-sm font-bold text-gray-500 uppercase mb-4">Biểu Đồ Constraints (Pixels)</h4>
+                    <div class="chart-container">
+                        <canvas id="constraintChart"></canvas>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2 text-center">Biểu đồ thể hiện khoảng không gian cho phép (Min đến Max) theo chiều rộng và chiều cao.</p>
+                </div>
+
+                <!-- Live Preview -->
+                <div class="bg-white p-4 rounded-xl shadow-sm">
+                    <h4 class="text-sm font-bold text-gray-500 uppercase mb-2">Kết Quả Hiển Thị (Preview)</h4>
+                    <p class="text-xs text-gray-400 mb-4">Widget con mong muốn kích thước: 100x100. Hãy xem Parent ép nó thế nào:</p>
+                    
+                    <!-- Simulation Container -->
+                    <div class="w-full h-80 bg-gray-100 border border-dashed border-gray-300 relative flex items-center justify-center overflow-hidden">
+                        <!-- The "Parent" Constraint Box (Visual Guide) -->
+                        <div id="sim-parent-guide" class="border-2 border-blue-300 absolute transition-all duration-300 flex items-center justify-center bg-blue-50 bg-opacity-30">
+                            <!-- The "Child" Widget -->
+                            <div id="sim-child" class="bg-blue-600 transition-all duration-300 text-white flex items-center justify-center text-xs font-bold shadow-lg">
+                                Child
+                            </div>
+                        </div>
+                        <div class="absolute bottom-2 right-2 text-xs text-gray-400">Canvas 300x300</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Case Studies / Scenarios -->
+    <section id="scenarios" class="max-w-5xl mx-auto mt-16 px-4 mb-20">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Tại Sao Widget Của Tôi Không Nghe Lời?</h2>
+        <p class="text-gray-600 mb-8 max-w-3xl">
+            Một lỗi phổ biến là đặt kích thước cho Child nhưng nó bị Parent bỏ qua. 
+            Hãy chọn các tình huống dưới đây để xem cách các Widget phổ biến áp đặt luật lệ lên con của chúng.
+        </p>
+
+        <div class="bg-white rounded-xl shadow overflow-hidden">
+            <!-- Tabs -->
+            <div class="flex border-b">
+                <button class="flex-1 py-4 px-6 text-sm font-bold text-blue-600 border-b-2 border-blue-600 bg-blue-50 focus:outline-none scenario-tab" onclick="switchScenario('center', this)">Center Widget</button>
+                <button class="flex-1 py-4 px-6 text-sm font-bold text-gray-500 hover:text-gray-700 focus:outline-none scenario-tab" onclick="switchScenario('column', this)">Column / Row</button>
+                <button class="flex-1 py-4 px-6 text-sm font-bold text-gray-500 hover:text-gray-700 focus:outline-none scenario-tab" onclick="switchScenario('expanded', this)">Expanded</button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <!-- Text Explanation -->
+                <div id="scenario-text">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Center: Người Cha Dễ Tính</h3>
+                    <p class="text-gray-600 mb-4">
+                        Widget `Center` lấy ràng buộc chặt (tight) từ màn hình, nhưng nó lại nới lỏng (loose) cho con của nó.
+                    </p>
+                    <ul class="list-disc pl-5 space-y-2 text-gray-600 text-sm">
+                        <li><strong>Input:</strong> Màn hình ép Center phải full size.</li>
+                        <li><strong>Action:</strong> Center bảo con: "Con cứ chọn cỡ tùy thích, miễn là nhỏ hơn màn hình".</li>
+                        <li><strong>Result:</strong> Nếu con muốn 100x100, con sẽ được 100x100 và nằm giữa.</li>
+                    </ul>
+                </div>
+
+                <!-- Visual Diagram -->
+                <div class="h-64 bg-gray-100 rounded-lg border flex flex-col relative overflow-hidden" id="scenario-visual">
+                    <!-- Scenario Visual content injected by JS -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-10 mt-10">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h3 class="text-xl font-bold mb-4">Tổng Kết</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-300">
+                <div class="bg-gray-700 p-3 rounded">
+                    Widget không tự quyết định vị trí.
+                </div>
+                <div class="bg-gray-700 p-3 rounded">
+                    Widget không có kích thước tùy ý.
+                </div>
+                <div class="bg-gray-700 p-3 rounded">
+                    Sửa lỗi: Hỏi "Cha đang ép con điều gì?"
+                </div>
+            </div>
+            <p class="mt-8 text-xs text-gray-500">Được tạo dựa trên tài liệu "Cơ chế Layout trong Flutter".</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- SECTION 1: MANTRA INTERACTION ---
+        function highlightStep(step) {
+            // Reset styles
+            [1, 2, 3].forEach(i => {
+                const el = document.getElementById(`step-card-${i}`);
+                el.classList.add('opacity-70');
+                el.classList.remove('transform', 'scale-105', 'shadow-lg', 'opacity-100');
+            });
+
+            // Highlight chosen step
+            const active = document.getElementById(`step-card-${step}`);
+            active.classList.remove('opacity-70');
+            active.classList.add('transform', 'scale-105', 'shadow-lg', 'opacity-100');
+
+            // Update text
+            const detailText = document.getElementById('step-detail');
+            if (step === 1) {
+                detailText.innerHTML = "<strong>Bước 1 (Đi Xuống):</strong> Cha nói: 'Căn phòng này rộng tối đa 300px, con liệu mà ở.' -> <em>Min/Max Width & Height được truyền xuống.</em>";
+            } else if (step === 2) {
+                detailText.innerHTML = "<strong>Bước 2 (Đi Lên):</strong> Con tính toán nội dung và nói: 'Con cần đúng 150px chiều rộng ạ.' -> <em>Widget con trả về Size mong muốn.</em>";
+            } else {
+                detailText.innerHTML = "<strong>Bước 3 (Vị Trí):</strong> Cha gật đầu: 'Ok, 150px. Ta sẽ đặt con vào giữa phòng.' -> <em>Parent tính toán offset (x,y) và vẽ con lên màn hình.</em>";
+            }
+        }
+
+        // --- SECTION 2: LABORATORY (Chart.js & Simulation) ---
+        let constraintChart;
+
+        function initChart() {
+            const ctx = document.getElementById('constraintChart').getContext('2d');
+            constraintChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Width Constraints', 'Height Constraints'],
+                    datasets: [
+                        {
+                            label: 'Min Value',
+                            data: [50, 50],
+                            backgroundColor: 'rgba(2, 86, 155, 0.6)', // Flutter Blue
+                            borderColor: 'rgba(2, 86, 155, 1)',
+                            borderWidth: 1,
+                            barPercentage: 0.6
+                        },
+                        {
+                            label: 'Max Value',
+                            data: [250, 250],
+                            backgroundColor: 'rgba(255, 193, 7, 0.6)', // Amber
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            borderWidth: 1,
+                            barPercentage: 0.6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', // Horizontal bars
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 350,
+                            title: { display: true, text: 'Pixels' }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw + 'px';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            updateLab(); // Initial run
+        }
+
+        function updateLab() {
+            // 1. Get Values
+            let minW = parseInt(document.getElementById('min-w').value);
+            let maxW = parseInt(document.getElementById('max-w').value);
+            let minH = parseInt(document.getElementById('min-h').value);
+            let maxH = parseInt(document.getElementById('max-h').value);
+
+            // Logic enforcement: Min cannot be > Max
+            if (minW > maxW) { maxW = minW; document.getElementById('max-w').value = maxW; }
+            if (minH > maxH) { maxH = minH; document.getElementById('max-h').value = maxH; }
+
+            // Update Labels
+            document.getElementById('val-min-w').innerText = minW;
+            document.getElementById('val-max-w').innerText = maxW;
+            document.getElementById('val-min-h').innerText = minH;
+            document.getElementById('val-max-h').innerText = maxH;
+
+            // 2. Update Chart
+            if (constraintChart) {
+                constraintChart.data.datasets[0].data = [minW, minH];
+                constraintChart.data.datasets[1].data = [maxW, maxH];
+                constraintChart.update();
+            }
+
+            // 3. Update Visual Simulation
+            const parentBox = document.getElementById('sim-parent-guide');
+            const childBox = document.getElementById('sim-child');
+            
+            // Parent represents the Max allowed space (for visualization) 
+            // but effectively we show the "Range".
+            // Let's visualize the "Max" constraint as the box size, 
+            // and imply min constraints through logic.
+            
+            parentBox.style.width = maxW + 'px';
+            parentBox.style.height = maxH + 'px';
+
+            // Child logic: Wants 100x100
+            const desiredSize = 100;
+            
+            // Apply Flutter Logic: 
+            // 1. Clamp desired size between Min and Max
+            let childFinalW = Math.max(minW, Math.min(desiredSize, maxW));
+            let childFinalH = Math.max(minH, Math.min(desiredSize, maxH));
+
+            childBox.style.width = childFinalW + 'px';
+            childBox.style.height = childFinalH + 'px';
+            childBox.innerText = `${childFinalW}x${childFinalH}`;
+
+            // 4. Update Status Text
+            let wStatus = (minW === maxW) ? "Tight" : "Loose";
+            let hStatus = (minH === maxH) ? "Tight" : "Loose";
+            
+            let statusMsg = `<span class="text-blue-600">Width: ${wStatus}</span> (${minW}-${maxW}) | <span class="text-amber-600">Height: ${hStatus}</span> (${minH}-${maxH})`;
+            
+            if (minW === maxW && minH === maxH) {
+                statusMsg += "<br><strong>Kết luận:</strong> Widget con bị khóa cứng (Tight) vào kích thước này.";
+            } else if (childFinalW !== desiredSize || childFinalH !== desiredSize) {
+                 statusMsg += "<br><strong>Lưu ý:</strong> Child muốn 100x100 nhưng bị Parent ép đổi cỡ.";
+            } else {
+                statusMsg += "<br><strong>Kết luận:</strong> Child được tự do chọn 100x100.";
+            }
+
+            document.getElementById('constraint-status').innerHTML = statusMsg;
+        }
+
+        // --- SECTION 3: SCENARIOS ---
+        const scenarioContent = {
+            'center': {
+                title: 'Center: Người Cha Dễ Tính',
+                desc: 'Widget `Center` lấy ràng buộc chặt (tight) từ màn hình, nhưng nó lại nới lỏng (loose) cho con của nó.',
+                points: [
+                    'Input: Màn hình ép Center phải full size.',
+                    'Action: Center bảo con: "Con cứ chọn cỡ tùy thích, miễn là nhỏ hơn màn hình".',
+                    'Result: Nếu con muốn 100x100, con sẽ được 100x100 và nằm giữa.'
+                ],
+                visual: `<div class="w-full h-full bg-blue-100 flex items-center justify-center relative"><span class="absolute top-2 left-2 text-xs text-blue-400">Screen (Tight)</span><div class="bg-blue-600 text-white w-24 h-24 flex items-center justify-center text-xs shadow-lg rounded">Child<br>100x100</div></div>`
+            },
+            'column': {
+                title: 'Column/Row: Ràng Buộc Không Giới Hạn',
+                desc: 'Column cho phép con dài bao nhiêu tùy thích theo chiều dọc (Unbounded), nhưng giới hạn chiều ngang.',
+                points: [
+                    'Lưu ý: Đừng bao giờ đặt một Expanded bên trong Column mà không có giới hạn chiều cao.',
+                    'Chiều dọc: Min Height = 0, Max Height = Infinity.',
+                    'Chiều ngang: Bị giới hạn bởi chiều ngang của Column.'
+                ],
+                visual: `<div class="w-full h-full bg-gray-200 flex flex-col items-center pt-4 gap-2 border-l-4 border-r-4 border-dashed border-gray-400"><div class="bg-amber-500 w-3/4 h-10 text-white text-xs flex items-center justify-center">Widget 1</div><div class="bg-amber-500 w-3/4 h-20 text-white text-xs flex items-center justify-center">Widget 2 (Cao tùy ý)</div><div class="bg-amber-500 w-3/4 h-10 text-white text-xs flex items-center justify-center">Widget 3</div><span class="text-xs text-gray-500 mt-2">Chiều dọc không giới hạn</span></div>`
+            },
+            'expanded': {
+                title: 'Expanded: Người Chiếm Hữu',
+                desc: 'Expanded ép widget con phải thay đổi kích thước để lấp đầy khoảng trống còn lại.',
+                points: [
+                    'Thường dùng trong Row hoặc Column.',
+                    'Expanded bỏ qua kích thước mong muốn của con.',
+                    'Nó tính toán không gian còn dư và ép con phải phình ra cho vừa khít (Tight Constraint).'
+                ],
+                visual: `<div class="w-full h-full bg-gray-100 flex items-center p-4 gap-2"><div class="bg-gray-400 text-white w-10 h-10 flex items-center justify-center text-xs">A</div><div class="flex-1 bg-green-500 text-white h-10 flex items-center justify-center text-xs shadow-inner animate-pulse">Expanded (Fill)</div><div class="bg-gray-400 text-white w-10 h-10 flex items-center justify-center text-xs">B</div></div>`
+            }
+        };
+
+        function switchScenario(key, btn) {
+            // Update Tabs
+            document.querySelectorAll('.scenario-tab').forEach(t => {
+                t.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', 'bg-blue-50');
+                t.classList.add('text-gray-500');
+            });
+            btn.classList.remove('text-gray-500');
+            btn.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'bg-blue-50');
+
+            // Update Content
+            const data = scenarioContent[key];
+            const listHtml = data.points.map(p => `<li>${p}</li>`).join('');
+            
+            const textHtml = `
+                <h3 class="text-xl font-bold text-gray-800 mb-3">${data.title}</h3>
+                <p class="text-gray-600 mb-4">${data.desc}</p>
+                <ul class="list-disc pl-5 space-y-2 text-gray-600 text-sm">${listHtml}</ul>
+            `;
+
+            document.getElementById('scenario-text').innerHTML = textHtml;
+            document.getElementById('scenario-visual').innerHTML = data.visual;
+        }
+
+        // Initialize
+        window.onload = function() {
+            highlightStep(1); // Start with step 1
+            initChart();
+            switchScenario('center', document.querySelector('.scenario-tab')); // Start with center tab
+        };
+
+    </script>
+</body>
+</html>
