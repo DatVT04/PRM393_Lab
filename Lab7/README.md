@@ -1,16 +1,35 @@
 # lab_7
 
-A new Flutter project.
+# 📌 Nội dung bài lab 7:
 
-## Getting Started
+✔ Có 4 ô:
 
-This project is a starting point for a Flutter application.
+- Full name
 
-A few resources to get you started if this is your first Flutter project:
+- Email
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- Password
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Confirm password
+
+✔ Validate:
+
+- Không được để trống
+
+- Email đúng format
+
+- Password ≥ 8 ký tự + có số
+
+- Confirm khớp password
+
+✔ UX:
+
+- Next / Done trên bàn phím
+
+- Bấm ngoài → tắt keyboard
+
+- Không bị tràn màn hình
+
+✔ Async:
+
+- Email bắt đầu bằng **taken** → báo *Email already taken*
