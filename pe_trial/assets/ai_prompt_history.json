@@ -1,0 +1,26 @@
+[
+  {
+    "date": "2026-03-04",
+    "time": "14:30:15",
+    "sender": "Vu Tien Dat",
+    "receiver": "Claude",
+    "prompt": "How to implement BMI calculation in Flutter?",
+    "response": "BMI is calculated as weight (kg) divided by height (m) squared. In Flutter: double bmi = weight / ((height / 100) * (height / 100)); You can then categorize: <18.5 Underweight, 18.5-24.9 Normal, 25-29.9 Overweight, >=30 Obese."
+  },
+  {
+    "date": "2026-03-04",
+    "time": "15:10:22",
+    "sender": "Vu Tien Dat",
+    "receiver": "ChatGPT",
+    "prompt": "How to use Provider for state management in Flutter?",
+    "response": "Provider is a Flutter state management package. Steps: 1) Add provider to pubspec.yaml, 2) Create a ChangeNotifier class, 3) Wrap your app with ChangeNotifierProvider, 4) Use Consumer or context.watch() to listen for changes, 5) Call notifyListeners() when state changes."
+  },
+  {
+    "date": "2026-03-05",
+    "time": "09:45:00",
+    "sender": "Vu Tien Dat",
+    "receiver": "Gemini",
+    "prompt": "How to read JSON from assets in Flutter?",
+    "response": "To read JSON from assets: 1) Add file to assets in pubspec.yaml, 2) Use rootBundle.loadString('assets/file.json'), 3) Parse with jsonDecode(). Example: final String response = await rootBundle.loadString('assets/data.json'); final data = jsonDecode(response);"
+  }
+]
